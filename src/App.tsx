@@ -100,8 +100,8 @@ export default function App() {
       <div className="navbar bg-neutral text-neutral-content">
         <div className="navbar-start">
           <div>
-            <h1 className="text-xl font-bold">Kalkulator WIBOR</h1>
-            <p className="text-sm opacity-60">Sprawdź ile przepłacasz na kredycie z WIBOR i ile możesz odzyskać</p>
+            <h1 className="text-xl font-bold">Kalkulator WIBOR — oblicz roszczenie do pozwu</h1>
+            <p className="text-sm opacity-60">Sprawdź ile przepłacasz na kredycie i przygotuj się do pozwu bankowego</p>
           </div>
         </div>
         <div className="navbar-end">
