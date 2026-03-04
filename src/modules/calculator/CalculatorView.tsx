@@ -56,15 +56,15 @@ export default function CalculatorView() {
           <div className="flex flex-col">
             {/* Hero — dominant element, golden ratio spacing */}
             <div className="pt-8 pb-10 px-2">
-              <h2 className="text-3xl lg:text-4xl font-extrabold leading-tight tracking-tight">
+              <h2 className="display-tight leading-[1.1]">
                 Oblicz ile przepłacasz<br />na kredycie z&nbsp;WIBOR
               </h2>
-              <div className="mt-6 flex flex-col gap-2.5 text-base opacity-80">
+              <div className="mt-6 flex flex-col gap-2.5 text-[0.9375rem] opacity-70 leading-relaxed">
                 <p>Porównaj ratę z WIBOR i bez WIBOR</p>
                 <p>Oblicz kwotę roszczenia do pozwu</p>
                 <p>Zobacz ile nadpłaciłeś od początku kredytu</p>
               </div>
-              <p className="mt-10 text-xs tracking-widest uppercase opacity-40">Wypełnij formularz aby zobaczyć wynik</p>
+              <p className="label-caps mt-10">Wypełnij formularz aby zobaczyć wynik</p>
             </div>
 
             {/* Divider — thin, Swiss-style */}
@@ -72,11 +72,11 @@ export default function CalculatorView() {
 
             {/* TSUE — secondary block, restrained */}
             <div className="py-8 px-2">
-              <p className="text-xs tracking-widest uppercase opacity-40 mb-3">Wyrok TSUE</p>
-              <p className="text-lg font-semibold leading-snug">
-                C-471/24 z 12.02.2026 — klauzule WIBOR&nbsp;+&nbsp;marża mogą być nieuczciwe
-              </p>
-              <p className="mt-3 text-sm opacity-60 leading-relaxed max-w-lg">
+              <p className="label-caps mb-3">Wyrok TSUE</p>
+              <h3 className="leading-snug">
+                C-471/24 z&nbsp;12.02.2026 — klauzule WIBOR&nbsp;+&nbsp;marża mogą być nieuczciwe
+              </h3>
+              <p className="mt-3 text-[0.8125rem] opacity-55 leading-relaxed max-w-lg">
                 Banki miały obowiązek przedstawić symulację skrajnego wzrostu stóp. Większość tego nie zrobiła — to otwiera drogę do pozwu.
               </p>
             </div>
@@ -86,23 +86,23 @@ export default function CalculatorView() {
 
             {/* Benefits — compact grid, Fibonacci scale */}
             <div className="py-8 px-2">
-              <p className="text-xs tracking-widest uppercase opacity-40 mb-5">Co możesz zyskać</p>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+              <p className="label-caps mb-5">Co możesz zyskać</p>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                 <div>
-                  <p className="text-2xl font-bold">30–50%</p>
-                  <p className="text-sm opacity-60 mt-1">niższa rata kredytu</p>
+                  <p className="text-2xl font-bold tabular-nums tracking-tight">30–50%</p>
+                  <p className="text-[0.8125rem] opacity-50 mt-1">niższa rata kredytu</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">Zwrot</p>
-                  <p className="text-sm opacity-60 mt-1">nadpłaconych odsetek</p>
+                  <p className="text-2xl font-bold tracking-tight">Zwrot</p>
+                  <p className="text-[0.8125rem] opacity-50 mt-1">nadpłaconych odsetek</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">Niższe</p>
-                  <p className="text-sm opacity-60 mt-1">saldo zadłużenia</p>
+                  <p className="text-2xl font-bold tracking-tight">Niższe</p>
+                  <p className="text-[0.8125rem] opacity-50 mt-1">saldo zadłużenia</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">Stała rata</p>
-                  <p className="text-sm opacity-60 mt-1">przewidywalne koszty</p>
+                  <p className="text-2xl font-bold tracking-tight">Stała rata</p>
+                  <p className="text-[0.8125rem] opacity-50 mt-1">przewidywalne koszty</p>
                 </div>
               </div>
             </div>

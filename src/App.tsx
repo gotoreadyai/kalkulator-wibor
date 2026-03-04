@@ -100,8 +100,8 @@ export default function App() {
       <header className="bg-neutral text-neutral-content">
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-baseline gap-3">
-            <h1 className="text-lg font-bold tracking-tight">Kalkulator WIBOR</h1>
-            <span className="hidden sm:inline text-xs tracking-widest uppercase opacity-40">Roszczenie do pozwu</span>
+            <h1 className="font-bold tracking-tight">Kalkulator WIBOR</h1>
+            <span className="hidden sm:inline label-caps">Roszczenie do pozwu</span>
           </div>
           <HeaderIconBar />
         </div>
@@ -115,8 +115,8 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-6">
             <div>
-              <p className="text-xs tracking-widest uppercase opacity-40 mb-2">Kalkulator WIBOR</p>
-              <p className="text-sm opacity-60 max-w-md leading-relaxed">
+              <p className="label-caps mb-2">Kalkulator WIBOR</p>
+              <p className="text-[0.8125rem] opacity-55 max-w-md leading-relaxed">
                 Narzędzie do szacowania roszczeń z tytułu odwiborowania kredytu hipotecznego. Wyniki mają charakter poglądowy i nie stanowią porady prawnej.
               </p>
             </div>
