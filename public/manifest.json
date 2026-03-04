@@ -1,0 +1,10 @@
+{
+  "name": "Kalkulator WIBOR",
+  "short_name": "WIBOR Kalk",
+  "description": "Kalkulator raty kredytu hipotecznego z WIBOR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2a323c",
+  "lang": "pl"
+}
