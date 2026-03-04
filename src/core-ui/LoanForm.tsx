@@ -62,7 +62,7 @@ export default function LoanForm() {
   return (
     <form onSubmit={handleSubmit} className="card bg-base-100 shadow-xl">
       <div className="card-body gap-4">
-        <h2 className="card-title border-b border-base-300 pb-3">Dane z umowy kredytu</h2>
+        <p className="label-caps pb-1">Dane z umowy kredytu</p>
 
         <fieldset className="fieldset">
           <legend className="fieldset-legend">Szablon umowy</legend>
