@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import type { LoanInput } from '../utils/calculations';
 import { toDateString } from '../utils/formatters';
-import { LOAN_TEMPLATES, getBank } from '../data/loanTemplates';
-import { useCases, useInput } from '../core/CaseContext';
+import { useCases, useInput, useTemplates, getBank } from '../core/CaseContext';
 
 export default function LoanForm() {
   const { updateInput, setActiveTab, openSheetModule, activeTemplateId } = useCases();
+  const templates = useTemplates();
   const savedInput = useInput();
   const [loanAmount, setLoanAmount] = useState(savedInput ? String(savedInput.loanAmount) : '200000');
   const [margin, setMargin] = useState(savedInput ? savedInput.margin.toFixed(2) : '2.09');
@@ -19,13 +19,13 @@ export default function LoanForm() {
   // Track previous templateId to detect external changes (sheet selection)
   const prevTemplateId = useRef(activeTemplateId);
 
-  const templateInfo = activeTemplateId ? LOAN_TEMPLATES.find(t => t.id === activeTemplateId) ?? null : null;
+  const templateInfo = activeTemplateId ? templates.find(t => t.id === activeTemplateId) ?? null : null;
   const bank = templateInfo ? getBank(templateInfo.bankId) : null;
 
   useEffect(() => {
     if (activeTemplateId === prevTemplateId.current) return;
     prevTemplateId.current = activeTemplateId;
-    const tpl = activeTemplateId ? LOAN_TEMPLATES.find(t => t.id === activeTemplateId) : null;
+    const tpl = activeTemplateId ? templates.find(t => t.id === activeTemplateId) : null;
     if (!tpl) return;
     setLoanAmount(tpl.loanAmount.toString());
     setMargin(tpl.margin.toFixed(2));

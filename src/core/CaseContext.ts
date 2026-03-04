@@ -6,6 +6,8 @@ import { getDefaultWiborEntries } from '../data/defaults';
 import type { Case, WiborDataset, LawsuitData } from './types';
 import { toDateString } from '../utils/formatters';
 import { toLoanInput, toStoredInput } from './serialization';
+import type { Bank, LoanTemplate } from '../data/loanTemplates';
+import { loadRemoteData } from '../data/dataService';
 import * as caseStore from './caseStore';
 import * as wiborStore from './wiborStore';
 
@@ -28,6 +30,8 @@ function parseHash(): string {
 
 interface CaseStore {
   // State
+  banks: Bank[];
+  templates: LoanTemplate[];
   cases: Case[];
   activeCaseId: string | null;
   activeInput: LoanInput | null;
@@ -85,6 +89,8 @@ function updateCaseAndSave(id: string, patch: Partial<Case>) {
 }
 
 export const useCases = create<CaseStore>((set, get) => ({
+  banks: [],
+  templates: [],
   cases: [],
   activeCaseId: null,
   activeInput: null,
@@ -101,11 +107,12 @@ export const useCases = create<CaseStore>((set, get) => ({
       useCases.setState({ activeTab: parseHash() });
     });
 
-    const [allCases, allDatasets] = await Promise.all([
+    const [allCases, allDatasets, remoteData] = await Promise.all([
       caseStore.getAllCases(),
       wiborStore.getAllDatasets(),
+      loadRemoteData(),
     ]);
-    set({ cases: allCases });
+    set({ cases: allCases, banks: remoteData.banks, templates: remoteData.templates });
     if (allCases.length > 0) await doLoadCase(allCases[0], allDatasets);
     set({ ready: true });
   },
@@ -217,6 +224,22 @@ export function useResult(): CalculationResult | null {
 
 export function useInput(): LoanInput | null {
   return useCases(s => s.activeInput);
+}
+
+export function useBanks(): Bank[] {
+  return useCases(s => s.banks);
+}
+
+export function useTemplates(): LoanTemplate[] {
+  return useCases(s => s.templates);
+}
+
+export function getBank(bankId: string): Bank | undefined {
+  return useCases.getState().banks.find(b => b.id === bankId);
+}
+
+export function getTemplate(templateId: string): LoanTemplate | undefined {
+  return useCases.getState().templates.find(t => t.id === templateId);
 }
 
 export function useWiborSource(): 'default' | 'custom' {

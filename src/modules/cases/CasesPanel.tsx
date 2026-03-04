@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import { useCases, useActiveCase, useLawsuitSummary, useResult } from '../../core/CaseContext';
+import { useCases, useActiveCase, useLawsuitSummary, useResult, useTemplates, getBank } from '../../core/CaseContext';
 import { formatPLN } from '../../utils/formatters';
-import { getBank, LOAN_TEMPLATES } from '../../data/loanTemplates';
 import { EVIDENCE_ITEMS } from '../../core/types';
 import type { PlaintiffData } from '../../core/types';
 
@@ -14,8 +13,9 @@ function LawsuitSection() {
 
   if (!activeCase || !result) return null;
 
+  const templates = useTemplates();
   const { lawsuit } = activeCase;
-  const tpl = activeCase.templateId ? LOAN_TEMPLATES.find(t => t.id === activeCase.templateId) : null;
+  const tpl = activeCase.templateId ? templates.find(t => t.id === activeCase.templateId) : null;
   const bank = tpl ? getBank(tpl.bankId) : null;
 
   const updatePlaintiff = (patch: Partial<PlaintiffData>) => {

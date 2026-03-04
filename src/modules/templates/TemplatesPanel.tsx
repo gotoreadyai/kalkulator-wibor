@@ -1,19 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Scale, AlertTriangle } from 'lucide-react';
-import { LOAN_TEMPLATES, BANKS } from '../../data/loanTemplates';
 import type { LoanTemplate, LawsuitBasis, Bank } from '../../data/loanTemplates';
-import { useCases } from '../../core/CaseContext';
+import { useCases, useBanks, useTemplates } from '../../core/CaseContext';
 
 const DIRECTIVE_LABELS: Record<string, string> = {
   '93/13': 'Dyrektywa 93/13 (klauzule abuzywne)',
   '2014/17': 'Dyrektywa 2014/17 (obowiązek ESIS)',
   'both': 'Dyrektywa 93/13 + 2014/17 (ESIS)',
 };
-
-const templatesByBank = BANKS.map(bank => ({
-  bank,
-  templates: LOAN_TEMPLATES.filter(t => t.bankId === bank.id),
-})).filter(g => g.templates.length > 0);
 
 function LawsuitInfo({ basis }: { basis: LawsuitBasis }) {
   return (
@@ -86,6 +80,21 @@ function BankCard({ bank, templates }: { bank: Bank; templates: LoanTemplate[] }
 }
 
 export default function TemplatesPanel() {
+  const banks = useBanks();
+  const templates = useTemplates();
+
+  const templatesByBank = useMemo(() =>
+    banks.map(bank => ({
+      bank,
+      templates: templates.filter(t => t.bankId === bank.id),
+    })).filter(g => g.templates.length > 0),
+    [banks, templates],
+  );
+
+  if (templates.length === 0) {
+    return <p className="py-8 text-center opacity-50 text-sm">Ładowanie szablonów umów...</p>;
+  }
+
   return (
     <div className="space-y-3">
       <p className="text-sm opacity-60">Wybierz wzór umowy kredytowej. Dane zostaną wpisane do formularza — uzupełnij kwotę, datę i okres z konkretnej umowy.</p>
