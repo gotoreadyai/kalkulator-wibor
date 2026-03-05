@@ -56,7 +56,7 @@ export interface Case {
 export interface PageText {
   pageNum: number;
   text: string;
-  method: 'textLayer' | 'ocr';
+  method: 'ocr';
   confidence?: number;
 }
 

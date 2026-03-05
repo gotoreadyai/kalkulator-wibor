@@ -1,4 +1,4 @@
-// Polyfill for Map.getOrInsertComputed (needed if old pdfjs cached by browser)
+// Polyfill: pdfjs v5 uses Map.getOrInsertComputed which may be cached by browsers
 if (typeof (Map.prototype as any).getOrInsertComputed !== 'function') {
   (Map.prototype as any).getOrInsertComputed = function <K, V>(key: K, cb: (key: K) => V): V {
     if (this.has(key)) return this.get(key)!;
@@ -24,8 +24,6 @@ export interface ExtractionProgress {
   status: 'init' | 'ocr' | 'done' | 'error';
 }
 
-export type ProgressCallback = (p: ExtractionProgress) => void;
-
 async function renderPageToBlob(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<Blob> {
   const page = await pdf.getPage(pageNum);
   const viewport = page.getViewport({ scale: 2.0 });
@@ -40,9 +38,6 @@ async function renderPageToBlob(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number)
 
   await page.render({ canvasContext: ctx, viewport } as any).promise;
 
-  const sample = ctx.getImageData(Math.floor(viewport.width / 2), Math.floor(viewport.height / 2), 1, 1).data;
-  console.log(`[OCR] Page ${pageNum}: canvas ${canvas.width}x${canvas.height}, center pixel rgba(${sample.join(',')})`);
-
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(b => b ? resolve(b) : reject(new Error('canvas toBlob failed')), 'image/png');
   });
@@ -52,28 +47,28 @@ let tesseractWorker: Tesseract.Worker | null = null;
 
 async function getWorker(): Promise<Tesseract.Worker> {
   if (!tesseractWorker) {
-    console.log('[Tesseract] Creating worker with pol language...');
-    tesseractWorker = await Tesseract.createWorker('pol', undefined, {
-      logger: (m: { status: string; progress: number }) => {
-        console.log(`[Tesseract] ${m.status} ${(m.progress * 100).toFixed(0)}%`);
-      },
-    });
-    console.log('[Tesseract] Worker ready');
+    tesseractWorker = await Tesseract.createWorker('pol');
   }
   return tesseractWorker;
 }
 
+export async function terminateWorker(): Promise<void> {
+  if (tesseractWorker) {
+    await tesseractWorker.terminate();
+    tesseractWorker = null;
+  }
+}
+
 /**
- * ALWAYS uses OCR for every page. No text layer extraction.
- * PDF pages are rendered to canvas images, then Tesseract OCR processes them.
+ * Extracts text from every PDF page using OCR (Tesseract.js with Polish model).
+ * Pages are rendered to canvas via pdfjs, then recognized by Tesseract.
  */
 export async function extractTextFromPdf(
   file: File,
   caseId: string,
   evidenceKey: string,
-  onProgress?: ProgressCallback,
+  onProgress?: (p: ExtractionProgress) => void,
 ): Promise<DocumentText> {
-  // Delete old result first
   await db.documentTexts.delete(`${caseId}/${evidenceKey}`);
 
   const arrayBuffer = await file.arrayBuffer();
@@ -81,7 +76,6 @@ export async function extractTextFromPdf(
   const totalPages = pdf.numPages;
   const pages: PageText[] = [];
 
-  // Init Tesseract worker up front (downloads language data)
   onProgress?.({ page: 0, totalPages, status: 'init' });
   const worker = await getWorker();
 
@@ -89,15 +83,11 @@ export async function extractTextFromPdf(
     onProgress?.({ page: i, totalPages, status: 'ocr' });
     try {
       const blob = await renderPageToBlob(pdf, i);
-      console.log(`[OCR] Page ${i}: blob size ${blob.size} bytes`);
-
       const { data } = await worker.recognize(blob);
-      console.log(`[OCR] Page ${i}: text length ${data.text.length}, confidence ${data.confidence}`);
-
       pages.push({ pageNum: i, text: data.text.trim(), method: 'ocr', confidence: data.confidence });
       onProgress?.({ page: i, totalPages, status: 'done' });
     } catch (err) {
-      console.error(`[OCR] Page ${i} FAILED:`, err);
+      console.error(`[OCR] Page ${i} failed:`, err);
       pages.push({ pageNum: i, text: '', method: 'ocr', confidence: 0 });
       onProgress?.({ page: i, totalPages, status: 'error' });
     }

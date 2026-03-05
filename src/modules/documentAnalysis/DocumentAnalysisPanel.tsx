@@ -15,10 +15,7 @@ function PageCard({ page }: { page: PageText }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="badge badge-sm font-mono">{page.pageNum}</span>
-            <span className="badge badge-xs badge-outline">
-              {page.method === 'ocr' ? 'OCR' : 'tekst'}
-            </span>
-            {page.method === 'ocr' && page.confidence != null && (
+            {page.confidence != null && (
               <span className={`badge badge-xs ${page.confidence > 80 ? 'badge-success' : page.confidence > 50 ? 'badge-warning' : 'badge-error'}`}>
                 {page.confidence.toFixed(0)}%
               </span>
@@ -67,9 +64,9 @@ export default function DocumentAnalysisPanel() {
   }
 
   const fullText = getFullText(doc);
-  const ocrPages = doc.pages.filter(p => p.method === 'ocr').length;
-  const avgConfidence = ocrPages > 0
-    ? doc.pages.filter(p => p.method === 'ocr' && p.confidence != null).reduce((s, p) => s + p.confidence!, 0) / ocrPages
+  const pagesWithConfidence = doc.pages.filter(p => p.confidence != null && p.confidence > 0);
+  const avgConfidence = pagesWithConfidence.length > 0
+    ? pagesWithConfidence.reduce((s, p) => s + p.confidence!, 0) / pagesWithConfidence.length
     : null;
 
   const handleCopy = async () => {
@@ -80,13 +77,11 @@ export default function DocumentAnalysisPanel() {
 
   return (
     <div className="space-y-4">
-      {/* Summary */}
       <div className="bg-base-200 rounded-lg p-4 space-y-2">
         <h4 className="font-bold text-sm">Wyciągnięty tekst umowy</h4>
         <div className="flex flex-wrap gap-3 text-xs">
           <span>{doc.pages.length} stron</span>
           <span>{fullText.length.toLocaleString()} znaków</span>
-          {ocrPages > 0 && <span>{ocrPages} stron OCR</span>}
           {avgConfidence != null && (
             <span className={avgConfidence > 80 ? 'text-success' : avgConfidence > 50 ? 'text-warning' : 'text-error'}>
               Pewność OCR: {avgConfidence.toFixed(0)}%
@@ -101,7 +96,6 @@ export default function DocumentAnalysisPanel() {
         </div>
       </div>
 
-      {/* Pages */}
       <div className="space-y-2">
         {doc.pages.map(page => (
           <PageCard key={page.pageNum} page={page} />
