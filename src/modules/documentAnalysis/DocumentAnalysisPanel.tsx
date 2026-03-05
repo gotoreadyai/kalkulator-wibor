@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, Copy, CheckCircle } from 'lucide-react';
-import { useCases } from '../../core/CaseContext';
+import { useCases, useCaseFiles } from '../../core/CaseContext';
 import { getDocumentText, getFullText } from '../../core/ocrPipeline';
 import type { DocumentText, PageText } from '../../core/types';
 
@@ -38,6 +38,8 @@ function PageCard({ page }: { page: PageText }) {
 
 export default function DocumentAnalysisPanel() {
   const activeCaseId = useCases(s => s.activeCaseId);
+  const caseFiles = useCaseFiles();
+  const contractFile = caseFiles.find(f => f.evidenceKey === 'contract');
   const [doc, setDoc] = useState<DocumentText | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -49,7 +51,7 @@ export default function DocumentAnalysisPanel() {
       setDoc(dt ?? null);
       setLoading(false);
     });
-  }, [activeCaseId]);
+  }, [activeCaseId, contractFile]);
 
   if (loading) return <div className="flex justify-center py-12"><span className="loading loading-spinner" /></div>;
 

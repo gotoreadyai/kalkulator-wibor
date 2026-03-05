@@ -49,9 +49,12 @@ async function renderPageToBlob(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number)
   // The typing is wrong/overly strict in v4. Casting avoids a false TS error.
   await page.render({ canvasContext: ctx, viewport } as any).promise;
 
-  return new Promise<Blob>((resolve, reject) => {
+  const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(b => b ? resolve(b) : reject(new Error('canvas toBlob failed')), 'image/png');
   });
+  canvas.width = 0;
+  canvas.height = 0;
+  return blob;
 }
 
 let tesseractWorker: Tesseract.Worker | null = null;
@@ -61,13 +64,6 @@ async function getWorker(): Promise<Tesseract.Worker> {
     tesseractWorker = await Tesseract.createWorker('pol');
   }
   return tesseractWorker;
-}
-
-export async function terminateWorker(): Promise<void> {
-  if (tesseractWorker) {
-    await tesseractWorker.terminate();
-    tesseractWorker = null;
-  }
 }
 
 /**

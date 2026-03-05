@@ -53,6 +53,9 @@ function EvidenceRow({ evidenceKey, label }: { evidenceKey: string; label: strin
       await extractTextFromPdf(rawFile, activeCaseId, evidenceKey, setProgress);
       setHasText(true);
       openSheetModule('documentAnalysis');
+    } catch (err) {
+      console.error('[OCR] Extraction failed:', err);
+      alert('Nie udało się przetworzyć PDF. Spróbuj ponownie.');
     } finally {
       setExtracting(false);
       setProgress(null);
