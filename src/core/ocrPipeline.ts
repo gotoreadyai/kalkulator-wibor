@@ -8,80 +8,88 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-const MIN_TEXT_LENGTH = 50;
-
 export interface ExtractionProgress {
   page: number;
   totalPages: number;
-  method: 'textLayer' | 'ocr';
-  status: 'extracting' | 'done' | 'error';
+  status: 'init' | 'ocr' | 'done' | 'error';
 }
 
-type ProgressCallback = (p: ExtractionProgress) => void;
+export type ProgressCallback = (p: ExtractionProgress) => void;
 
-async function extractTextLayer(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<string> {
-  const page = await pdf.getPage(pageNum);
-  const content = await page.getTextContent();
-  return content.items
-    .filter(item => 'str' in item)
-    .map(item => (item as { str: string }).str)
-    .join(' ')
-    .trim();
-}
-
-async function ocrPage(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<{ text: string; confidence: number }> {
+async function renderPageToBlob(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<Blob> {
   const page = await pdf.getPage(pageNum);
   const viewport = page.getViewport({ scale: 2.0 });
 
-  // pdfjs v5 needs a real DOM canvas for rendering
   const canvas = document.createElement('canvas');
   canvas.width = viewport.width;
   canvas.height = viewport.height;
   const ctx = canvas.getContext('2d')!;
 
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   await page.render({ canvasContext: ctx, viewport } as any).promise;
 
-  const blob = await new Promise<Blob>((resolve, reject) => {
+  const sample = ctx.getImageData(Math.floor(viewport.width / 2), Math.floor(viewport.height / 2), 1, 1).data;
+  console.log(`[OCR] Page ${pageNum}: canvas ${canvas.width}x${canvas.height}, center pixel rgba(${sample.join(',')})`);
+
+  return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(b => b ? resolve(b) : reject(new Error('canvas toBlob failed')), 'image/png');
   });
-
-  const { data } = await Tesseract.recognize(blob, 'pol', {
-    logger: () => {},
-  });
-  return { text: data.text.trim(), confidence: data.confidence };
 }
 
+let tesseractWorker: Tesseract.Worker | null = null;
+
+async function getWorker(): Promise<Tesseract.Worker> {
+  if (!tesseractWorker) {
+    console.log('[Tesseract] Creating worker with pol language...');
+    tesseractWorker = await Tesseract.createWorker('pol', undefined, {
+      logger: (m: { status: string; progress: number }) => {
+        console.log(`[Tesseract] ${m.status} ${(m.progress * 100).toFixed(0)}%`);
+      },
+    });
+    console.log('[Tesseract] Worker ready');
+  }
+  return tesseractWorker;
+}
+
+/**
+ * ALWAYS uses OCR for every page. No text layer extraction.
+ * PDF pages are rendered to canvas images, then Tesseract OCR processes them.
+ */
 export async function extractTextFromPdf(
   file: File,
   caseId: string,
   evidenceKey: string,
   onProgress?: ProgressCallback,
 ): Promise<DocumentText> {
+  // Delete old result first
+  await db.documentTexts.delete(`${caseId}/${evidenceKey}`);
+
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
   const totalPages = pdf.numPages;
   const pages: PageText[] = [];
 
+  // Init Tesseract worker up front (downloads language data)
+  onProgress?.({ page: 0, totalPages, status: 'init' });
+  const worker = await getWorker();
+
   for (let i = 1; i <= totalPages; i++) {
-    // Try text layer first
-    onProgress?.({ page: i, totalPages, method: 'textLayer', status: 'extracting' });
-    const textLayerResult = await extractTextLayer(pdf, i);
-
-    if (textLayerResult.replace(/\s/g, '').length >= MIN_TEXT_LENGTH) {
-      pages.push({ pageNum: i, text: textLayerResult, method: 'textLayer' });
-      onProgress?.({ page: i, totalPages, method: 'textLayer', status: 'done' });
-      continue;
-    }
-
-    // Fallback to OCR
-    onProgress?.({ page: i, totalPages, method: 'ocr', status: 'extracting' });
+    onProgress?.({ page: i, totalPages, status: 'ocr' });
     try {
-      const { text, confidence } = await ocrPage(pdf, i);
-      pages.push({ pageNum: i, text, method: 'ocr', confidence });
-      onProgress?.({ page: i, totalPages, method: 'ocr', status: 'done' });
-    } catch {
+      const blob = await renderPageToBlob(pdf, i);
+      console.log(`[OCR] Page ${i}: blob size ${blob.size} bytes`);
+
+      const { data } = await worker.recognize(blob);
+      console.log(`[OCR] Page ${i}: text length ${data.text.length}, confidence ${data.confidence}`);
+
+      pages.push({ pageNum: i, text: data.text.trim(), method: 'ocr', confidence: data.confidence });
+      onProgress?.({ page: i, totalPages, status: 'done' });
+    } catch (err) {
+      console.error(`[OCR] Page ${i} FAILED:`, err);
       pages.push({ pageNum: i, text: '', method: 'ocr', confidence: 0 });
-      onProgress?.({ page: i, totalPages, method: 'ocr', status: 'error' });
+      onProgress?.({ page: i, totalPages, status: 'error' });
     }
   }
 

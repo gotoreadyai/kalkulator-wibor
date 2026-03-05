@@ -97,7 +97,7 @@ function EvidenceRow({ evidenceKey, label }: { evidenceKey: string; label: strin
         <div className="ml-7">
           <progress className="progress progress-primary w-full h-1.5" value={progress.page} max={progress.totalPages} />
           <p className="text-[10px] opacity-50 mt-0.5">
-            Strona {progress.page}/{progress.totalPages} ({progress.method === 'ocr' ? 'OCR' : 'tekst'})
+            {progress.status === 'init' ? 'Ładowanie modelu OCR...' : `OCR strona ${progress.page}/${progress.totalPages}`}
           </p>
         </div>
       )}
