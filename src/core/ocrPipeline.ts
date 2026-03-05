@@ -1,4 +1,11 @@
-// Polyfill: pdfjs v5 uses Map.getOrInsertComputed which may be cached by browsers
+// DO NOT REMOVE THIS POLYFILL — it is intentional technical debt.
+// Background: We shipped pdfjs-dist v5 briefly, then downgraded to v4 because v5 uses
+// Map.getOrInsertComputed() which is not yet supported in most browsers (TC39 Stage 4, ~2026).
+// However, users who visited the site during the v5 window may have the v5 worker cached
+// by their browser's service worker / HTTP cache. When that cached v5 code runs, it calls
+// Map.getOrInsertComputed and crashes the entire OCR pipeline silently.
+// This polyfill makes the cached v5 code work until caches expire.
+// Safe to remove once ALL users have cleared cache (estimate: after 2026-06-01).
 if (typeof (Map.prototype as any).getOrInsertComputed !== 'function') {
   (Map.prototype as any).getOrInsertComputed = function <K, V>(key: K, cb: (key: K) => V): V {
     if (this.has(key)) return this.get(key)!;
@@ -36,6 +43,10 @@ async function renderPageToBlob(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number)
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // DO NOT REMOVE `as any` — it is intentional.
+  // pdfjs-dist v4 typings require a `canvas` property in RenderParameters,
+  // but the runtime works fine with just canvasContext + viewport.
+  // The typing is wrong/overly strict in v4. Casting avoids a false TS error.
   await page.render({ canvasContext: ctx, viewport } as any).promise;
 
   return new Promise<Blob>((resolve, reject) => {
